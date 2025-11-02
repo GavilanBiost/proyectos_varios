@@ -1,0 +1,435 @@
+---
+title: "PEC 2 Visualicación de datos"
+author: "Jesús F García Gavilán"
+date: "2025-10-31"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    css: style.css
+  pdf:
+    toc: true
+    toc_depth: 3
+    includes-in-header: preambulo.tex
+editor_options: 
+  markdown: 
+    wrap: 80
+---
+
+El siguiente notebook corresponde al PEC2 de visualización de datos del máster de ciencia de datos de la UOC. En esta actividad se pide crear tres visualizaciones utilizando unas técnicas previamente asignadas. En mi caso:
+
+1.  Histograma
+2.  Digrama de red (network diagram)
+3.  Gráfico en espiral (spiral plot)
+
+Los tres gráficos tienen un componente numérico:
+
+-   El histograma nos permite ver la distribución de los datos
+-   El network diagram nos permite ver la interconexión entre variables
+-   El gráfico en espiral con una serie temporal
+
+```{r setup-python, include=FALSE}
+library(reticulate)
+
+# 1) Crear (una sola vez) y usar un virtualenv aislado para este proyecto
+
+if (!"qmd-venv" %in% reticulate::virtualenv_list()) {
+reticulate::virtualenv_create("qmd-venv")
+}
+reticulate::use_virtualenv("qmd-venv", required = TRUE)
+
+# 2) Instalar kagglehub en ese entorno si falta
+
+if (!reticulate::py_module_available("kagglehub")) {
+reticulate::py_install("kagglehub", pip = TRUE)
+}
+
+# 3) (Opcional) Ver la configuración para comprobar qué Python está usando
+
+reticulate::py_config()
+```
+
+# Librerías:
+
+```{python Librerias python, message=FALSE, warning=FALSE}
+# Descarga de la BD:
+from py.kaggle import descargar_bd
+```
+
+```{r Librerias R, message=FALSE, warning=FALSE}
+# Apertura de la BD:
+library(readr)
+# Manipulación de las BD:
+library(janitor)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(lubridate)
+# Visualización gráfica y de tablas:
+library(ggplot2)
+library(kableExtra)
+library(gridExtra)
+library(grid)
+library(ggraph)
+library(tidygraph)
+library(visNetwork)
+# Visualización de las redes:
+library(igraph)
+library(grDevices)
+# Exportar la BD:
+library(rio)
+```
+
+# 1. Descarga de la base de datos:
+
+Primero descargaré una base de datos desde una fuenta abierta. En este caso, es una base de datos que contiene información de estilo de vida y actividad física. Descargo la base de datos de keggle desde el siguiente url: https://www.kaggle.com/datasets/jockeroika/life-style-data
+
+```{python Descarga de BD}
+descargar_bd('jockeroika/life-style-data', 'database/raw')
+descargar_bd('sumanthvrao/daily-climate-time-series-data', 'database/raw')
+```
+
+# 2. Preparación de la base de datos:
+
+A continuación, cargo la base de datos en R e inicio un preprocesado:
+
+```{r Apertura de BD}
+estilo_de_vida = read_csv("database/raw/Final_data.csv")
+clima = read_csv("database/raw/DailyDelhiClimateTrain.csv")
+```
+
+# 3. Preprocesado:
+
+## 3.1. Tabla general:
+
+```{r Resumen de la BD, results='hide'}
+# Dimesiones del diccionario 20000x54
+dim(estilo_de_vida)
+# Tipo de variables:
+str(estilo_de_vida)
+# Vista de las primeras 6 filas
+head(estilo_de_vida)
+# Vista de las ultimas 6 filas
+tail(estilo_de_vida)
+# Valores perdidos por variable
+sapply(estilo_de_vida, function(x) mean(is.na(x) | x==""))
+# Estandarizo los nombres de la BD:
+estilo_de_vida_new_names = clean_names(estilo_de_vida)
+#colnames(Data_Dictionary)
+#colnames(Data_Dictionary_new_names)
+
+# Dimesiones del diccionario 1462x5
+dim(clima)
+# Tipo de variables:
+str(clima)
+# Vista de las primeras 6 filas
+head(clima)
+# Vista de las ultimas 6 filas
+tail(clima)
+# Valores perdidos por variable
+sapply(clima, function(x) mean(is.na(x) | x==""))
+#colnames(Data_Dictionary)
+#colnames(Data_Dictionary_new_names)
+```
+
+Es una base de datos (BD) grande con 20000 registros y 54 variables. No tiene valores perdidos.
+
+## 3.2. Variable continuas:
+
+```{r Tabla resumen variables cuantitativas, results='hide'}
+# Con la función summary, reviso las variables cuantitativas:
+summary(select(estilo_de_vida_new_names, where(is.numeric)))
+# Con la función summary, reviso las variables cuantitativas:
+summary(select(clima, where(is.numeric)))
+# Elimino enero 2017:
+clima_new = clima %>%
+  filter(year(date) != 2017)
+```
+
+No hay valores extraños ni variables mal cuantificadas. 
+
+## 3.3. Variables categóricas:
+
+```{r Categoricas, results='hide'}
+# Listado de variables categóricas:
+# estilo_de_vida_new_names %>%
+#   select(where(~ is.factor(.x) || is.character(.x))) %>%
+#   mutate(across(everything(), as.character)) %>%
+#   pivot_longer(cols = everything(), names_to = "variable", 
+#                values_to = "categoria", values_drop_na = F) %>%
+#   group_by(variable, categoria) %>%
+#   summarise(n = n(), .groups = "drop_last") %>%
+#   group_by(variable) %>%
+#   mutate(total = sum(n), prop = n/total) %>%
+#   ungroup() %>%
+#   kbl(digits = 1, 
+#       caption = "Tabla de frecuencias de las variables categóricas") %>%
+#   kable_styling(full_width = F, bootstrap_options = c("striped", "hover"))
+  
+```
+
+La mayoría de las variables tienen muchas categorías
+
+```{r}
+export(estilo_de_vida_new_names, "database/clean/final_limpia_v1.xlsx")
+```
+
+
+# 4. Visualizaciones:
+
+Para la siguiente actividad, teniendo en cuenta la información que tenemos y el tipo de tarea, utilizaremos la siguientes variables para cada visualización:
+
+* Histograma: `cal_balance` (es una variable con una distribución más o menos normal que supone la diferencia entre las calorías ingeridas y las calorías utilizadas por la actividad física)
+* Digrama de red: todas las variables numéricas. Estandarizaré los datos y utilizaré la matriz de correlación resultante
+* Spiral plot (condogram): para esta visualización utilizaré una BD datos del clima en Delhi entre el 2013 y el 2017. Utilizaré la variable fecha y humidity para hacer un heatmap condegram
+
+## 4.1. Histograma:
+
+```{r Histograma}
+#png(filename = "figuras/PEC2_vdd_histograma.png", width = 15, height = 15, 
+#res=300, unit="cm")
+ggplot(estilo_de_vida_new_names, aes(x=cal_balance)) + 
+  geom_histogram(color = "black", fill = "grey", bins = 44) +
+  labs(title = "Histograma del balance calórico en 20.000 personas activas",
+       caption = "https://www.kaggle.com/datasets/jockeroika/life-style-data",
+       x = "Balance Calórico (kcal/día)",
+       y = "Frecuencia") +
+  theme_classic() +
+  theme(axis.text.x = element_text(size = 11),
+        axis.text.y = element_text(size = 11),
+        axis.title.x = element_text(size = 13),
+        axis.title.y = element_text(size = 13),
+        plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0.5)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_x_continuous(breaks = seq(-1300, 3200, by = 1000))
+#dev.off()
+```
+
+Para el discurso del ppt:
+https://datavizcatalogue.com/ES/metodos/histograma.html
+https://www.data-to-viz.com/graph/histogram.html
+
+## 4.2. Diagrama de Red
+
+Para el diagrama de red, hago una matriz de correlaciones de spearman entre todas las variables numéricas, filtro por aquellas variables que tienen al menos una correlación mayor de 0.7 en términos absolutos (para quitar ruido y visualizar mejor los nodos) y saco la matriz limpia para el gráfico:
+
+```{r Matriz de correlaciones}
+# Selección de variables:
+umb = 0.7 # threshold r
+
+corr = estilo_de_vida_new_names %>%
+  select(where(is.numeric)) %>%
+  scale() %>%
+  as.data.frame() %>%
+  {all = cor(., method = "spearman")
+   diag(all) = 0
+   keep = rowSums(abs(all) >= umb, na.rm = T) > 0
+   if (sum(keep) < 2) stop("No hay variables")
+   mat = cor(.[, keep, drop = F], method = "spearman")
+   mat[abs(mat) < umb] <- 0
+   mat}
+
+corr_abs_bi = ifelse(abs(corr) >= umb, 1, 0)
+diag(corr_abs_bi) = 0
+
+nom_or = colnames(corr)
+nom_new = c("weight", "avg bpm", "session duration", "cal burned", "fat %",
+            "workout day/w", "exp", "BMI", "carbs", "prot", "fats",
+            "cal intake", "burn cals/30 min", "BMI calc", "cal from macros",
+            "prot/kg", "% HRR", "% max HR", "lean mass", "expected burn",
+            "burn cals/30 min bc")
+nom_num = 1:21
+
+dic_nom = data.frame(cbind(nom_num, nom_or, nom_new))
+
+colnames(corr) = dic_nom$nom_num
+rownames(corr) = dic_nom$nom_num
+colnames(corr_abs_bi) = dic_nom$nom_num
+rownames(corr_abs_bi) = dic_nom$nom_num
+```
+
+
+```{r Network diagram}
+# Creación del grafo
+network = graph_from_adjacency_matrix(corr_abs_bi, mode='undirected', diag=F)
+# Extrae las aristas como pares de nombres de nodos
+el = as_edgelist(network, names = TRUE)
+# Toma la correlación correspondiente a cada arista (i, j)
+val_corr = corr[cbind(el[,1], el[,2])]
+# Atributos de estilo:
+E(network)$color = ifelse((val_corr >= 0), "steelblue4", "tomato3")
+V(network)$color = "yellow"
+# Visualización:
+g = ggraph(as_tbl_graph(network), layout = "circle") +
+  geom_edge_link(aes(color = I(color)), width = 1) +
+  geom_node_point(aes(color = I(color)), size = 10) +
+  geom_node_text(aes(label = name), color = "black", size = 4, repel = F) +
+  scale_color_identity() +
+  theme_void() +
+  annotate("text", x = -1.2, y = 1.1, label = "Cor positiva", 
+           color = "steelblue4", hjust = 0, size = 4) +
+  annotate("text", x = -1.2, y = 1.0, label = "Cor negativa", 
+           color = "tomato3", hjust = 0, size = 4) +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0.5)) +
+  labs(title = "Red de correlaciones entre variables de estilo de vida",
+       caption = "https://www.kaggle.com/datasets/jockeroika/life-style-data")
+# Exportación de la visualización:
+#png(filename = "figuras/PEC2_vdd_red.png", width = 15, height = 15, 
+#res=300, unit="cm")
+#g
+#dev.off()
+```
+
+```{r Texto leyenda}
+# Leyenda números - variable:
+texto_legenda = dic_nom %>%
+  mutate(texto = str_c(nom_num, " = ", nom_new)) %>%
+  pull(texto)
+tabla_legenda = texto_legenda %>%
+  matrix(nrow = 7, ncol = 3, byrow = T) %>%
+  as.data.frame() %>%
+  tableGrob(rows = NULL, theme = ttheme_default(
+    core = list(fg_params = list(cex = 0.7),
+                bg_params = list(fill = NA, col = NA),
+                padding  = unit(c(2, 2), "mm")),
+    colhead = list(fg_params = list(col = NA), 
+                   bg_params = list(fill = NA, col = NA))))
+```
+
+
+```{r Visualización tabla y grafo}
+p_final = arrangeGrob(g, tabla_legenda, nrow = 2, heights = c(2,1))
+grid.newpage()
+#png(filename = "figuras/PEC2_vdd_red_v2.png", width = 15, height = 15, 
+#res=300, unit="cm")
+grid.draw(p_final)
+#dev.off()
+```
+
+
+```{r network diagram interactivo}
+E(network)$sign = ifelse(val_corr >= 0, "Positiva", "Negativa")
+# Tooltip con nombre descriptivo
+V(network)$title = paste0(V(network)$name, " = ",
+                          dic_nom$nom_new[match((V(network)$name), 
+                                                dic_nom$nom_num)])
+
+visIgraph(network, layout = "layout_in_circle") %>%
+  visEdges(smooth = F) %>%
+  visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+  visPhysics(stabilization = TRUE)
+```
+
+## 4.3. Gráfico en espiral (spiral plot):
+
+```{r Selección de datos}
+# Preparación de la variable fecha:
+clima_new = clima_new %>%
+  mutate(year = year(date),
+         month = month(date, label = F))
+# BD con las variables de interés:
+test = structure(list(as.factor(clima_new$year),
+                      clima_new$month,
+                      clima_new$humidity),
+                 .Names = c("año", "mes","humedad"),
+                 class = "data.frame", row.names = c(NA, -1461L))
+# Simplificación de la BD y creación de la variable y para las barras:
+test = test %>%
+  group_by(año, mes) %>%
+  summarise(humedad_medio = mean(humedad), .groups = 'drop') %>%
+  mutate(y = (as.numeric(año) - 1) + (mes - 1)/12)
+```
+
+```{r Creación de condegram}
+# Creación de las barras:
+bars = test %>%
+  mutate(xmin = mes - 0.5, 
+         xmax = mes + 0.5, 
+         ymin = y, 
+         ymax = y + 1)
+# Creación de los polígonos:
+poly = bars %>%
+  rowwise() %>%
+  do(with(., tibble(humedad = humedad_medio,
+                    año = año,
+                    mes = mes,
+                    x = c(xmin, xmax, xmax, xmin),
+                    y = c(ymin - 1/24, ymin + 1/24, ymax + 1/24, 
+                          ymax - 1/24))))
+# Creación de la visualización base:
+p = ggplot(poly, aes(x, y, fill = interaction(mes, humedad))) +
+  geom_polygon(col = "black", linewidth = 0.1) +
+  coord_polar() +
+  ylim(-3, 5) +
+  viridis::scale_fill_viridis(discrete = T, option = 'G', direction = -1) +
+  scale_x_continuous(breaks = 1:12, 
+                     labels = c("Enero", "Febrero", "Marzo", "Abril", "Mayo", 
+                                "Junio", "Julio", "Agosto", "Septiembre",
+                                "Octubre", "Noviembre", "Diciembre")) +
+  theme_minimal()  + 
+  theme(legend.position = "none", axis.text.y = element_blank(),
+        axis.title = element_blank(),
+        plot.title = element_text(hjust = .5, face = "bold.italic", size = 14),
+        plot.caption = element_text(hjust = .5)) +
+  labs(title ="Distribución de humedad media en\n cada mes del 2013 al 2016",
+       caption = "Fuente: https://www.kaggle.com/datasets/sumanthvrao/daily-climate-time-series-data/")
+```
+
+```{r Texto para la leyenda}
+dic_nom = test %>%
+  distinct(año) %>%
+  mutate(texto = str_c("Círculo", row_number(), " = ", año)) %>%
+  pull(texto)
+
+tabla_legenda = dic_nom %>%
+  matrix(nrow = 1, ncol = 4, byrow = T) %>%
+  as.data.frame() %>%
+  tableGrob(rows = NULL, theme = ttheme_default(
+    core = list(fg_params = list(cex = 0.7),
+                bg_params = list(fill = NA, col = NA),
+                padding  = unit(c(2, 2), "mm")),
+    colhead = list(fg_params = list(col = NA), 
+                   bg_params = list(fill = NA, col = NA))))
+```
+
+```{r Barra lateral}
+# Creación de una gráfica dummy para la barra lateral:
+lim_humedad = range(poly$humedad, na.rm = TRUE)
+
+dummy_colorbar = ggplot(poly, aes(x = humedad, y = 1, fill = humedad)) +
+  geom_tile() +
+  scale_fill_viridis_c(name = "humedad", option = "G", limits = lim_humedad,
+                       direction = -1) +
+  guides(fill = guide_colorbar(direction = "vertical",
+                               barheight = unit(90, "pt"),
+                               barwidth  = unit(10, "pt"),
+                               ticks = TRUE)) +
+  theme_void() +
+  theme(legend.position = "right",
+        legend.title = element_text(size = 10),
+        legend.text  = element_text(size = 8))
+
+# Función para extraer la leyenda:
+get_legend_grob = function(p) {
+  g = ggplotGrob(p)
+  gtable::gtable_filter(g, "guide-box")
+}
+
+colorbar_grob = get_legend_grob(dummy_colorbar)
+```
+
+
+```{r exportación}
+p_tabla = arrangeGrob(p, tabla_legenda, nrow = 2, heights = c(6,1))
+p_final = arrangeGrob(p_tabla, colorbar_grob, ncol = 2, widths = c(5, 0.5))
+grid.newpage()
+#png(filename = "figuras/PEC2_vdd_congram_v3.png", width = 15, height = 15, 
+#res=300, unit="cm")
+grid.draw(p_final)
+#dev.off()
+```
+
+
+

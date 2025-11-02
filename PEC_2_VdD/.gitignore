@@ -1,0 +1,20 @@
+# Ignore everything by default
+*
+
+# But don't ignore these directories
+!figuras/
+!figuras/**
+!database/
+!database/**
+!py/
+!py/**
+
+# And don't ignore these specific files
+!code.html
+!code.qmd
+!style.css
+!preambulo.tex
+!README.md
+
+# Don't ignore .gitignore itself
+!.gitignore
