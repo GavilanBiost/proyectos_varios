@@ -18,3 +18,37 @@
 
 # Don't ignore .gitignore itself
 !.gitignore
+
+# Ignore standard temporary and editor files (even inside the whitelisted folders)
+# These are placed after the negations, so they are effective inside allowed dirs.
+# Editor / OS temp files
+*~
+*.tmp
+*.swp
+*.swo
+*.bak
+*.orig
+.DS_Store
+Thumbs.db
+# Backup files created by some editors
+*.~*
+# Python temp/cache
+__pycache__/
+*.py[cod]
+*.pyo
+# Jupyter
+.ipynb_checkpoints/
+# Logs and build artifacts
+*.log
+*.aux
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.gz
+# R / LaTeX
+.Rhistory
+.RData
+
+# Add any other temporary patterns here if you use other tools/editors
