@@ -4,7 +4,7 @@
 **Fecha:** 31 de octubre de 2025  
 **Asignatura:** M2.859 Visualización de Datos - Máster en Ciencia de Datos (UOC)
 
-## 📋 Descripción del Proyecto
+## Descripción del Proyecto
 
 Este proyecto corresponde a la segunda Prueba de Evaluación Continua (PEC2) de la asignatura de Visualización de Datos. El objetivo es crear tres visualizaciones diferentes utilizando técnicas específicas asignadas:
 
@@ -12,7 +12,7 @@ Este proyecto corresponde a la segunda Prueba de Evaluación Continua (PEC2) de 
 2. **Diagrama de Red (Network Diagram)** - Para mostrar interconexiones entre variables
 3. **Gráfico en Espiral (Spiral Plot/Condogram)** - Para representar series temporales
 
-## 📊 Datasets Utilizados
+## Datasets Utilizados
 
 ### 1. Life Style Data
 - **Fuente:** [Kaggle - Life Style Data](https://www.kaggle.com/datasets/jockeroika/life-style-data)
@@ -28,7 +28,7 @@ Este proyecto corresponde a la segunda Prueba de Evaluación Continua (PEC2) de 
 - **Descripción:** Datos climáticos diarios de Delhi
 - **Uso:** Gráfico en Espiral
 
-## 🎨 Visualizaciones
+## Visualizaciones
 
 ### 1. Histograma
 **Variable analizada:** Balance calórico (`cal_balance`)  
@@ -36,14 +36,14 @@ Este proyecto corresponde a la segunda Prueba de Evaluación Continua (PEC2) de 
 
 ### 2. Diagrama de Red
 **Variables analizadas:** Todas las variables numéricas con correlación |r| ≥ 0.7  
-**Método:** Correlación de Spearman  
+**Método:** correlación de Spearman  
 **Descripción:** Red de correlaciones entre 21 variables de estilo de vida, mostrando conexiones positivas (azul) y negativas (rojo).
 
 ### 3. Gráfico en Espiral (Condogram)
 **Variables analizadas:** Humedad media mensual (2013-2016)  
 **Descripción:** Visualización circular tipo heat map que muestra la distribución de humedad media por mes a lo largo de 4 años.
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 PEC_2_VdD/
@@ -68,7 +68,7 @@ PEC_2_VdD/
     └── kaggle.py        # Función para descargar datasets de Kaggle
 ```
 
-## 🛠️ Tecnologías y Librerías
+## Lenguaje y Librerías
 
 ### Python
 - `kagglehub` - Descarga de datasets
@@ -86,7 +86,7 @@ PEC_2_VdD/
 - `kableExtra` - Tablas
 - `viridis` - Paletas de color
 
-## 🚀 Instalación y Uso
+## Instalación y Uso
 
 ### Requisitos Previos
 - R (≥ 4.0)
@@ -121,19 +121,19 @@ quarto render code.qmd
 
 O desde RStudio: Abrir `code.qmd` y hacer clic en "Render"
 
-## 📈 Resultados
+## Resultados
 
 Las visualizaciones generadas demuestran:
 
 - **Histograma:** El balance calórico en personas activas sigue una distribución aproximadamente normal con una media ligeramente positiva.
 
-- **Diagrama de Red:** Variables relacionadas con el peso, IMC, y composición corporal muestran fuertes correlaciones positivas. Variables de gasto calórico se agrupan en clusters separados.
+- **Diagrama de Red:** Las variables relacionadas con el peso, el IMC y la composición corporal muestran fuertes correlaciones positivas. Las variables de gasto calórico se agrupan en clústeres separados.
 
-- **Gráfico en Espiral:** La humedad en Delhi muestra patrones estacionales claros, con mayor humedad en los meses de monzón (julio-septiembre).
+- **Gráfico en Espiral:** La humedad en Delhi muestra patrones estacionales claros, con mayor humedad durante el monzón (julio-septiembre).
 
-## 📝 Licencia
+## Licencia
 
-Este proyecto está bajo la Licencia MIT - ver más detalles a continuación:
+Este proyecto está bajo la licencia MIT - ver más detalles a continuación:
 
 ```
 MIT License
@@ -142,7 +142,7 @@ Copyright (c) 2025 Jesús F García Gavilán
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
+in the Software without restriction, including, without limitation, the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
@@ -159,12 +159,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-**Nota:** Este proyecto utiliza datasets de Kaggle que están sujetos a sus propias licencias. Por favor, consulta las licencias de los datasets en sus respectivas páginas de Kaggle.
+**Nota:** Este proyecto utiliza datasets de Kaggle, sujetos a sus propias licencias. Por favor, consulta las licencias de los datasets en sus respectivas páginas de Kaggle.
 
-## 📧 Contacto
+## Contacto
 
 **Autor:** gavilanbiost@gmail.com
 
 ---
 
-*Última actualización: 31 de octubre de 2025*
+*Última actualización: 11 de noviembre de 2025*
